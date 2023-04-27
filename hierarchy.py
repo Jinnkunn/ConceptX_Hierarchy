@@ -42,20 +42,21 @@ class HierarchicalModel:
 
         for w in words_selected:
             similar_words_raw = self.model.most_similar(w, topn=n)
-            similar_words_raw = [{
-                'word': w[0].split(':')[0],
-                'line': w[0].split(':')[1],
-                'position': w[0].split(':')[2],
-                'distance': w[1],
+            similar_words_raw = [SimilarWord(
+                word=w[0].split(':')[0],
+                line=w[0].split(':')[1],
+                position=w[0].split(':')[2],
+                distance=w[1],
                 # raw representation of the word
-                'values': self.model[w[0]]
-            } for w in similar_words_raw]
+                values=self.model[w[0]]
+            ) for w in similar_words_raw]
 
-            similar_words.append(SimilarWords(
+            similar_words.append(SimilarWordsGroup(
                 word=word,
                 line=line,
                 position=position,
-                similar_words=similar_words_raw))
+                similar_words=similar_words_raw
+            ))
 
         return similar_words
 
@@ -82,9 +83,7 @@ class HierarchicalModel:
                         'position': '0',
                         'distance': 0.0
                     },
-                    ...
             }
-            ...
         ]
         '''
 
@@ -101,12 +100,13 @@ class HierarchicalModel:
             for one_similar_word_tuple in similar_words:
                 # one_similar_word has the following format: [word, d+ ,d+]
                 one_similar_word = one_similar_word_tuple[0].split(':')
-                similar_words_for_one_token.append({
-                    'word': one_similar_word[0].replace("##", ""),
-                    'line': one_similar_word[1],
-                    'position': one_similar_word[2],
-                    'distance': one_similar_word_tuple[1]
-                })
+                similar_words_for_one_token.append(SimilarWord(
+                    word=one_similar_word[0].replace("##", ""),
+                    line=one_similar_word[1],
+                    position=one_similar_word[2],
+                    distance=one_similar_word_tuple[1],
+                    values=self.model[one_similar_word_tuple[0]]
+                ))
 
             result.append({
                 'token': embedding[i]['token'].replace(" ", ""),
@@ -115,16 +115,25 @@ class HierarchicalModel:
         return result
 
 
-class SimilarWords:
+class SimilarWordsGroup:
     def __init__(self, word, line, position, similar_words):
         self.word = word
         self.line = line
         self.position = position
-        self.similar_words = similar_words
+        self.similar_words = similar_words # all the similar words for this word
 
     def save_to_sv(self, file_path="similar_words_subset.txt"):
         print("[HierarchicalModel] writing similar words (subset of the original dataset) to file")
         with open(file_path, 'w') as f:
-            f.write("{} {}\n".format(len(self.similar_words), len(self.similar_words[0]["values"])))
+            f.write("{} {}\n".format(len(self.similar_words), len(self.similar_words[0].values)))
             for w in self.similar_words:
-                f.write("{}:{}:{} {}\n".format(w["word"], w["line"], w["position"], " ".join([str(v) for v in w["values"]])))
+                f.write("{}:{}:{} {}\n".format(w.word, w.line, w.position, " ".join([str(v) for v in w.values])))
+
+
+class SimilarWord:
+    def __init__(self, word, line, position, distance, values):
+        self.word = word
+        self.line = line
+        self.position = position
+        self.distance = distance
+        self.values = values
