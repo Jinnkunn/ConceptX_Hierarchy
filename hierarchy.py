@@ -46,20 +46,24 @@ class HierarchicalModel:
                 'word': w[0].split(':')[0],
                 'line': w[0].split(':')[1],
                 'position': w[0].split(':')[2],
-                'distance': w[1]
+                'distance': w[1],
+                # raw representation of the word
+                'values': self.model[w[0]]
             } for w in similar_words_raw]
 
-            similar_words.append({
-                'word': word,
-                'line': w.split(':')[1],
-                'position': w.split(':')[2],
-                'similar_words': similar_words_raw
-            })
+            similar_words.append(SimilarWords(
+                word=word,
+                line=line,
+                position=position,
+                similar_words=similar_words_raw))
 
         return similar_words
 
     def find_distance(self, word1, word2):
         return self.model.distance(word1, word2)
+
+    def get_embedding(self, word):
+        return self.model[word]
 
     def get_most_simiar_word_for_new_input(self, sentence, n=10):
         '''
@@ -109,3 +113,18 @@ class HierarchicalModel:
                 'similar_words': similar_words_for_one_token
             })
         return result
+
+
+class SimilarWords:
+    def __init__(self, word, line, position, similar_words):
+        self.word = word
+        self.line = line
+        self.position = position
+        self.similar_words = similar_words
+
+    def save_to_sv(self, file_path="similar_words_subset.txt"):
+        print("[HierarchicalModel] writing similar words (subset of the original dataset) to file")
+        with open(file_path, 'w') as f:
+            f.write("{} {}\n".format(len(self.similar_words), len(self.similar_words[0]["values"])))
+            for w in self.similar_words:
+                f.write("{}:{}:{} {}\n".format(w["word"], w["line"], w["position"], " ".join([str(v) for v in w["values"]])))
