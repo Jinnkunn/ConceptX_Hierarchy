@@ -1,4 +1,4 @@
-from hierarchy import HierarchicalModel, SimilarWords
+from hierarchy import HierarchicalModel
 
 if __name__ == '__main__':
     model = HierarchicalModel('files/output2.txt', 'bert-base-cased')
