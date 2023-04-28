@@ -1,4 +1,4 @@
-class SimilarWordsGroup:
+class SimilarTokenGroup:
     '''
     This class is used to store the all the similar words for one given token.
     '''
@@ -14,7 +14,7 @@ class SimilarWordsGroup:
                 f.write("{} {}\n".format(w.to_string(), " ".join([str(v) for v in w.values])))
 
 
-class SimilarWord:
+class SimilarToken:
     '''
     This class is used to store the information of one similar word.
     '''

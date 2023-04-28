@@ -5,7 +5,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 import matplotlib.pyplot as plt
 
 from embedding import Embedding
-from word_models import SimilarWord, Token, SimilarWordsGroup
+from word_models import SimilarToken, Token, SimilarTokenGroup
 
 
 class HierarchicalModel:
@@ -46,7 +46,7 @@ class HierarchicalModel:
         # For each token, they have their own similar words
         for one_token in words_selected:
             similar_words_raw = self.model.most_similar(one_token.to_string(), topn=n)
-            similar_words_raw = [SimilarWord(
+            similar_words_raw = [SimilarToken(
                 token=Token(word=token_split(w[0])[0], line=token_split(w[0])[1], position=token_split(w[0])[2]),
                 distance=w[1],
                 parent_token=one_token,
@@ -56,7 +56,7 @@ class HierarchicalModel:
 
             # add the similar words to the list
             # SimilarWordsGroup object contains the token and its similar words
-            similar_words.append(SimilarWordsGroup(
+            similar_words.append(SimilarTokenGroup(
                 token=Token(word=word, line=line, position=position),
                 similar_words=similar_words_raw
             ))
@@ -66,8 +66,8 @@ class HierarchicalModel:
     def find_distance(self, word1, word2):
         return self.model.distance(word1, word2)
 
-    def get_embedding(self, word):
-        return self.model[word]
+    def get_embedding(self, token):
+        return self.model[token]
 
     def get_most_simiar_word_for_new_input(self, sentence, n=10):
         '''
@@ -103,7 +103,7 @@ class HierarchicalModel:
             for one_similar_word_tuple in similar_words:
                 # one_similar_word has the following format: [word, d+ ,d+]
                 one_similar_word = token_split(one_similar_word_tuple[0])
-                similar_words_for_one_token.append(SimilarWord(
+                similar_words_for_one_token.append(SimilarToken(
                     token=Token(word=one_similar_word[0].replace("##", ""),
                                 line=one_similar_word[1],
                                 position=one_similar_word[2]),
