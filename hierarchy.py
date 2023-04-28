@@ -5,6 +5,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 import matplotlib.pyplot as plt
 
 from embedding import Embedding
+from word_models import SimilarWord, Token, SimilarWordsGroup
 
 
 class HierarchicalModel:
@@ -30,31 +31,33 @@ class HierarchicalModel:
         plt.show()
 
     def get_most_similar(self, word, line=-1, position=-1, n=10):
-        # find all the word has the following format: word:d+:d+
-        # where d is a digit. The first d is the line number and the second d is the position
         if line == -1 and position == -1:
-            words_selected = [w for w in self.words if w.startswith(word + ":")]
+            # find all the word has the following format: word:d+:d+
+            # where d is a digit. The first d is the line number and the second d is the position
+            words_selected = [Token(token_split(w)[0], token_split(w)[1], token_split(w)[2]) for w in self.words if
+                              w.startswith(word + ":")]
         else:
-            specific_word = word + ":" + str(line) + ":" + str(position)
+            # if the line and position is specified, then we can find the specific word
+            specific_word = Token(word, line, position)
             words_selected = [specific_word]
 
         similar_words = []
 
-        for w in words_selected:
-            similar_words_raw = self.model.most_similar(w, topn=n)
+        # For each token, they have their own similar words
+        for one_token in words_selected:
+            similar_words_raw = self.model.most_similar(one_token.to_string(), topn=n)
             similar_words_raw = [SimilarWord(
-                word=w[0].split(':')[0],
-                line=w[0].split(':')[1],
-                position=w[0].split(':')[2],
+                token=Token(word=token_split(w[0])[0], line=token_split(w[0])[1], position=token_split(w[0])[2]),
                 distance=w[1],
+                parent_token=one_token,
                 # raw representation of the word
                 values=self.model[w[0]]
             ) for w in similar_words_raw]
 
+            # add the similar words to the list
+            # SimilarWordsGroup object contains the token and its similar words
             similar_words.append(SimilarWordsGroup(
-                word=word,
-                line=line,
-                position=position,
+                token=Token(word=word, line=line, position=position),
                 similar_words=similar_words_raw
             ))
 
@@ -99,11 +102,11 @@ class HierarchicalModel:
             # where d is a digit. The first d is the line number and the second d is the position
             for one_similar_word_tuple in similar_words:
                 # one_similar_word has the following format: [word, d+ ,d+]
-                one_similar_word = one_similar_word_tuple[0].split(':')
+                one_similar_word = token_split(one_similar_word_tuple[0])
                 similar_words_for_one_token.append(SimilarWord(
-                    word=one_similar_word[0].replace("##", ""),
-                    line=one_similar_word[1],
-                    position=one_similar_word[2],
+                    token=Token(word=one_similar_word[0].replace("##", ""),
+                                line=one_similar_word[1],
+                                position=one_similar_word[2]),
                     distance=one_similar_word_tuple[1],
                     values=self.model[one_similar_word_tuple[0]]
                 ))
@@ -114,26 +117,8 @@ class HierarchicalModel:
             })
         return result
 
-
-class SimilarWordsGroup:
-    def __init__(self, word, line, position, similar_words):
-        self.word = word
-        self.line = line
-        self.position = position
-        self.similar_words = similar_words # all the similar words for this word
-
-    def save_to_sv(self, file_path="similar_words_subset.txt"):
-        print("[HierarchicalModel] writing similar words (subset of the original dataset) to file")
-        with open(file_path, 'w') as f:
-            f.write("{} {}\n".format(len(self.similar_words), len(self.similar_words[0].values)))
-            for w in self.similar_words:
-                f.write("{}:{}:{} {}\n".format(w.word, w.line, w.position, " ".join([str(v) for v in w.values])))
-
-
-class SimilarWord:
-    def __init__(self, word, line, position, distance, values):
-        self.word = word
-        self.line = line
-        self.position = position
-        self.distance = distance
-        self.values = values
+def token_split(token):
+    '''
+    :param token: a combined token with the following format: word:d+:d+, where first d is the line number and the second d is the position
+    '''
+    return token.split(':')
