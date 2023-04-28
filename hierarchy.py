@@ -4,8 +4,8 @@ import gensim
 from scipy.cluster.hierarchy import dendrogram, linkage
 import matplotlib.pyplot as plt
 
-from embedding import Embedding
-from word_models import SimilarToken, Token, SimilarTokenGroup
+from support_models.embedding import Embedding
+from support_models.words import SimilarToken, Token, SimilarTokenGroup
 
 
 class HierarchicalModel:
