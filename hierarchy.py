@@ -34,7 +34,7 @@ class HierarchicalModel:
         if line == -1 and position == -1:
             # find all the word has the following format: word:d+:d+
             # where d is a digit. The first d is the line number and the second d is the position
-            words_selected = [Token(token_split(w)[0], token_split(w)[1], token_split(w)[2]) for w in self.words if
+            words_selected = [Token.from_string(w) for w in self.words if
                               w.startswith(word + ":")]
         else:
             # if the line and position is specified, then we can find the specific word
@@ -47,7 +47,8 @@ class HierarchicalModel:
         for one_token in words_selected:
             similar_words_raw = self.model.most_similar(one_token.to_string(), topn=n)
             similar_words_raw = [SimilarToken(
-                token=Token(word=token_split(w[0])[0], line=token_split(w[0])[1], position=token_split(w[0])[2]),
+                # token=Token(word=token_split(w[0])[0], line=token_split(w[0])[1], position=token_split(w[0])[2]),
+                token=Token.from_string(w[0]),
                 distance=w[1],
                 parent_token=one_token,
                 # raw representation of the word
@@ -102,11 +103,8 @@ class HierarchicalModel:
             # where d is a digit. The first d is the line number and the second d is the position
             for one_similar_word_tuple in similar_words:
                 # one_similar_word has the following format: [word, d+ ,d+]
-                one_similar_word = token_split(one_similar_word_tuple[0])
                 similar_words_for_one_token.append(SimilarToken(
-                    token=Token(word=one_similar_word[0].replace("##", ""),
-                                line=one_similar_word[1],
-                                position=one_similar_word[2]),
+                    token=Token.from_string(one_similar_word_tuple[0]),
                     distance=one_similar_word_tuple[1],
                     values=self.model[one_similar_word_tuple[0]]
                 ))
@@ -116,9 +114,3 @@ class HierarchicalModel:
                 'similar_words': similar_words_for_one_token
             })
         return result
-
-def token_split(token):
-    '''
-    :param token: a combined token with the following format: word:d+:d+, where first d is the line number and the second d is the position
-    '''
-    return token.split(':')
